@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lotería Trilingüe</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom, #ffe8b5, #ffcc80);
+      text-align: center;
+      color: #333;
+    }
+
+    h1 {
+      margin-top: 20px;
+      font-size: 3rem;
+      color: #d35400;
+    }
+
+    p {
+      font-size: 1.1rem;
+    }
+
+    .controls {
+      margin: 20px;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 12px;
+      background: #ff9800;
+      color: white;
+      cursor: pointer;
+      margin: 10px;
+      transition: 0.3s;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #e67e22;
+      transform: scale(1.05);
+    }
+
+    .current-card {
+      background: white;
+      width: 300px;
+      margin: auto;
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .emoji {
+      font-size: 5rem;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      transition: 0.3s;
+      cursor: pointer;
+      border: 4px solid transparent;
+    }
+
+    .card:hover {
+      transform: scale(1.03);
+    }
+
+    .card h2 {
+      color: #d35400;
+      font-size: 1.2rem;
+    }
+
+    .marked {
+      border: 4px solid #00c853;
+      background: #e8ffe8;
+    }
+
+    #winnerMessage {
+      display: none;
+      font-size: 2rem;
+      color: green;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    footer {
+      margin: 30px;
+    }
+
+    @media (max-width: 700px) {
+      .board {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎲 Lotería Trilingüe</h1>
+  <p>Español • English • Náhuatl</p>
+
+  <div class="controls">
+    <button onclick="nextCard()">🎴 Sacar Carta</button>
+    <button onclick="restartGame()">🔄 Reiniciar</button>
+    <button onclick="checkLoteria()">🎉 ¡Lotería!</button>
+  </div>
+
+  <div class="current-card" id="currentCard">
+    <div class="emoji">🎲</div>
+    <h2>Presiona “Sacar Carta”</h2>
+    <p>La carta aparecerá aquí</p>
+  </div>
+
+  <div id="winnerMessage">
+    🎉 ¡LOTERÍA! ¡GANASTE! 🎉
+  </div>
+
+  <h2 style="margin-top:40px;">🎴 Tu Tablero</h2>
+  <p>Haz clic en las cartas para marcarlas cuando salgan</p>
+
+  <div class="board" id="board"></div>
+
+  <footer>
+    Proyecto educativo de lotería trilingüe 🌎
+  </footer>
+
+  <script>
+    const allCards = [
+      { emoji: '☀️', esp: 'El Sol', eng: 'The Sun', nah: 'Tonatiuh' },
+      { emoji: '🌙', esp: 'La Luna', eng: 'The Moon', nah: 'Metztli' },
+      { emoji: '💧', esp: 'El Agua', eng: 'Water', nah: 'Atl' },
+      { emoji: '🌽', esp: 'El Maíz', eng: 'Corn', nah: 'Tlaolli' },
+      { emoji: '🐶', esp: 'El Perro', eng: 'Dog', nah: 'Chichi' },
+      { emoji: '🏠', esp: 'La Casa', eng: 'House', nah: 'Calli' },
+      { emoji: '🌸', esp: 'La Flor', eng: 'Flower', nah: 'Xōchitl' },
+      { emoji: '🌳', esp: 'El Árbol', eng: 'Tree', nah: 'Cuahuitl' },
+      { emoji: '🐰', esp: 'El Conejo', eng: 'Rabbit', nah: 'Tochin' },
+      { emoji: '🐆', esp: 'El Jaguar', eng: 'Jaguar', nah: 'Ocelotl' },
+      { emoji: '❤️', esp: 'El Corazón', eng: 'Heart', nah: 'Yōllotl' },
+      { emoji: '🛣️', esp: 'El Camino', eng: 'Road', nah: 'Ōhtli' },
+      { emoji: '🔥', esp: 'El Fuego', eng: 'Fire', nah: 'Tletl' },
+      { emoji: '🌬️', esp: 'El Viento', eng: 'Wind', nah: 'Ehecatl' },
+      { emoji: '⭐', esp: 'La Estrella', eng: 'Star', nah: 'Citlalli' },
+      { emoji: '☁️', esp: 'El Cielo', eng: 'Sky', nah: 'Ilhuicatl' }
+    ];
+
+    let remainingCards = [...allCards];
+    let boardCards = [];
+
+    const board = document.getElementById('board');
+
+    function createBoard() {
+      board.innerHTML = '';
+
+      const shuffled = [...allCards].sort(() => Math.random() - 0.5);
+      boardCards = shuffled.slice(0, 8);
+
+      boardCards.forEach(card => {
+        board.innerHTML += `
+          <div class="card" onclick="this.classList.toggle('marked')">
+            <div class="emoji">${card.emoji}</div>
+            <h2>${card.esp}</h2>
+            <p><strong>English:</strong> ${card.eng}</p>
+            <p><strong>Náhuatl:</strong> ${card.nah}</p>
+          </div>
+        `;
+      });
+    }
+
+    function nextCard() {
+      if (remainingCards.length === 0) {
+        document.getElementById('currentCard').innerHTML = `
+          <div class="emoji">🏆</div>
+          <h2>¡Se acabaron las cartas!</h2>
+          <p>Presiona Reiniciar</p>
+        `;
+        return;
+      }
+
+      const randomIndex = Math.floor(Math.random() * remainingCards.length);
+      const card = remainingCards.splice(randomIndex, 1)[0];
+
+      document.getElementById('currentCard').innerHTML = `
+        <div class="emoji">${card.emoji}</div>
+        <h2>${card.esp}</h2>
+        <p><strong>English:</strong> ${card.eng}</p>
+        <p><strong>Náhuatl:</strong> ${card.nah}</p>
+      `;
+
+      const speech = new SpeechSynthesisUtterance(
+        `${card.esp}. ${card.eng}. ${card.nah}`
+      );
+
+      speech.lang = 'es-MX';
+      speech.rate = 0.9;
+
+      window.speechSynthesis.speak(speech);
+    }
+
+    function checkLoteria() {
+      const markedCards = document.querySelectorAll('.marked');
+
+      if (markedCards.length === boardCards.length) {
+        document.getElementById('winnerMessage').style.display = 'block';
+      } else {
+        alert('Aún no completas tu tablero 😅');
+      }
+    }
+
+    function restartGame() {
+      remainingCards = [...allCards];
+
+      document.getElementById('currentCard').innerHTML = `
+        <div class="emoji">🎲</div>
+        <h2>Juego Reiniciado</h2>
+        <p>Presiona “Sacar Carta”</p>
+      `;
+
+      document.getElementById('winnerMessage').style.display = 'none';
+
+      createBoard();
+    }
+
+    createBoard();
+  </script>
+
+</body>
+</html>
